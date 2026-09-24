@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tan · 微信公众号排版工作台</title>
+  <style>
+    :root[data-theme="dark"] {
+      --bg: #0b1120;
+      --card-bg: #151f32;
+      --panel-header: #19243a;
+      --editor-bg: #0f172a;
+      --preview-bg: #060911;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #26354d;
+      --input-bg: #0b1120;
+      --primary: #07c160;
+      --primary-hover: #059669;
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --panel-header: #f1f5f9;
+      --editor-bg: #f8fafc;
+      --preview-bg: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --input-bg: #ffffff;
+      --primary: #07c160;
+      --primary-hover: #059669;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.25s, color 0.25s;
+    }
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .header-top {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15.5px;
+      white-space: nowrap;
+    }
+    .brand-badge {
+      background: rgba(7, 193, 96, 0.15);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Right-Side Settings Drawer (Docked Panel) */
+    .settings-drawer {
+      width: 0;
+      min-width: 0;
+      opacity: 0;
+      pointer-events: none;
+      background: var(--card-bg);
+      border-left: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.28s, opacity 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+      z-index: 50;
+      height: 100%;
+    }
+    .settings-drawer.open {
+      width: 380px;
+      min-width: 380px;
+      opacity: 1;
+      pointer-events: auto;
+      border-left: 1px solid var(--border);
+    }
+    .drawer-header {
+      height: 52px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--card-bg);
+    }
+    .drawer-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .drawer-close-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .drawer-close-btn:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .current-theme-card {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .current-theme-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .current-theme-tag {
+      font-size: 11px;
+      color: #1e80ff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .theme-count-badge {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--border);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    .current-theme-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .current-theme-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+
+    /* Popover Sections */
+    .popover-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .popover-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      letter-spacing: 0.2px;
+    }
+    .section-subtext {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #1e80ff;
+    }
+    .color-hex-label {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text-muted);
+    }
+    .slider-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e80ff;
+      background: rgba(30, 128, 255, 0.1);
+      padding: 1px 7px;
+      border-radius: 6px;
+    }
+
+    /* 1. Theme Grid */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+    }
+    .theme-pill-btn {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .theme-pill-btn:hover {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.05);
+    }
+    .theme-pill-btn.active {
+      border-color: #1e80ff;
+      background: rgba(30, 128, 255, 0.12);
+      color: #1e80ff;
+      font-weight: 700;
+      box-shadow: 0 0 0 1px #1e80ff;
+    }
+
+    /* 2. Select in Popover */
+    .popover-select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .popover-select:focus {
+      border-color: #1e80ff;
+    }
+
+    /* 3. Segmented Control for Font Size */
+    .segmented-control {
+      display: flex;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .seg-btn:hover {
+      color: var(--text);
+    }
+    .seg-btn.active {
+      background: #1e80ff;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(30, 128, 255, 0.35);
+    }
+
+    /* 4. Color Swatches */
+    .color-swatches-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+    .color-swatch-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .color-swatch-circle:hover {
+      transform: scale(1.18);
+    }
+    .color-swatch-circle.active {
+      outline: 2.5px solid #1e80ff;
+      outline-offset: 2.5px;
+      transform: scale(1.08);
+    }
+    .custom-color-btn {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+    .custom-color-btn:hover {
+      border-color: #1e80ff;
+      color: #1e80ff;
+    }
+    .custom-color-btn.active {
+      border-color: #1e80ff;
+      background: rgba(30, 128, 255, 0.12);
+      color: #1e80ff;
+    }
+    .custom-color-btn input[type="color"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      cursor: pointer;
+    }
+
+    /* 5 & 6. Custom Range Sliders */
+    .custom-range {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      outline: none;
+      accent-color: #1e80ff;
+      cursor: pointer;
+    }
+
+    /* 7. Advanced Section */
+    .popover-advanced {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+    .advanced-toggle-btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      transition: color 0.15s;
+    }
+    .advanced-toggle-btn:hover {
+      color: var(--text);
+    }
+    .advanced-body {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 12px;
+    }
+    .advanced-body.open {
+      display: flex;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .popover-select-small {
+      width: 180px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+    }
+    .toggles-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 12px;
+      margin-top: 6px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      color: var(--text-muted);
+    }
+    .toggle-label input {
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .btn, .theme-mode-btn, .settings-nav-btn {
+      height: 34px;
+      padding: 0 13px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      box-sizing: border-box;
+      line-height: 1;
+      border: 1px solid transparent;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: var(--input-bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      border-color: #1e80ff;
+      color: #1e80ff;
+    }
+    .theme-mode-btn {
+      background: var(--input-bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .theme-mode-btn:hover {
+      border-color: #1e80ff;
+      color: #1e80ff;
+    }
+    .settings-nav-btn {
+      background: var(--input-bg);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .settings-nav-btn:hover {
+      border-color: #1e80ff;
+      color: #1e80ff;
+    }
+    .settings-nav-btn.active {
+      border-color: #1e80ff;
+      color: #1e80ff;
+      background: rgba(30, 128, 255, 0.12);
+      box-shadow: 0 0 0 1px #1e80ff;
+    }
+    .export-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .export-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      min-width: 220px;
+      padding: 6px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .export-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text);
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+      width: 100%;
+    }
+    .export-item:hover {
+      background: var(--input-bg);
+      color: #1e80ff;
+    }
+    .export-item-icon {
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .export-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .export-item-desc {
+      font-size: 11px;
+      color: var(--text-muted, #888);
+      line-height: 1.2;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .editor-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: var(--editor-bg);
+    }
+    .pane-header {
+      height: 36px;
+      background: var(--panel-header);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    textarea#editor {
+      flex: 1;
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 16px 20px;
+      color: var(--text);
+      font-family: "JetBrains Mono", Menlo, Consolas, Monaco, monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      resize: none;
+    }
+    .pane-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .scroll-sync-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 0 8px;
+      height: 22px;
+      font-size: 11px;
+      line-height: 22px;
+      cursor: pointer;
+      transition: color 0.18s, border-color 0.18s;
+    }
+    .scroll-sync-btn[aria-pressed="true"] {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .custom-css-pane {
+      height: 140px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+    }
+    .custom-css-pane.active {
+      display: flex;
+    }
+    textarea#custom-css {
+      flex: 1;
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 10px 16px;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      resize: none;
+    }
+    .device-select {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      height: 34px;
+      transition: border-color 0.18s;
+    }
+    .device-select:focus {
+      border-color: #1e80ff;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      flex-shrink: 0;
+      transition: background-color 0.2s;
+    }
+    .status-dot.warn {
+      background: #f59e0b;
+    }
+    .status-dot.error {
+      background: #ef4444;
+    }
+
+    /* Spec Verification Modal */
+    .spec-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .spec-modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+    .spec-modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 580px;
+      max-width: 92vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalSlideUp {
+      from {
+        transform: translateY(20px) scale(0.98);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+    .spec-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .spec-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .spec-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .spec-modal-close:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .spec-modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .spec-score-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .spec-score-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .spec-score-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .spec-score-summary {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .spec-score-badge {
+      font-size: 24px;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .spec-score-badge.score-perfect {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .spec-score-badge.score-warn {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .spec-score-badge.score-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .spec-issues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .spec-issue-item {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .spec-issue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .spec-issue-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spec-issue-link {
+      font-size: 12px;
+      color: #1e80ff;
+      text-decoration: none;
+    }
+    .spec-issue-link:hover {
+      text-decoration: underline;
+    }
+    .spec-issue-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .spec-issue-snippet {
+      font-family: monospace;
+      font-size: 11px;
+      background: var(--bg);
+      color: #ef4444;
+      padding: 6px 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid var(--border);
+    }
+    .spec-pass-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .spec-autofix-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .spec-autofix-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .spec-autofix-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #8b5cf6;
+    }
+    .spec-autofix-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .spec-autofix-btn {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+      color: #fff !important;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      white-space: nowrap;
+      cursor: pointer;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .spec-autofix-btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .spec-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .spec-modal-copy-btn {
+      width: 100%;
+      justify-content: center;
+      font-size: 14px;
+      padding: 10px 16px;
+      font-weight: 600;
+    }
+
+    .unsupported-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 10px;
+      padding: 9px 12px;
+      border: 1px solid #fcd34d;
+      background: #fffbeb;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #92400e;
+      font-weight: 600;
+    }
+    .unsupported-banner-icon {
+      flex-shrink: 0;
+    }
+    .preview-pane {
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 12px 16px;
+      min-width: 440px;
+      background: var(--preview-bg);
+      transition: background 0.25s, flex 0.28s;
+    }
+    .phone-simulator {
+      width: 393px;
+      height: 100%;
+      max-height: calc(100% - 8px);
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 36px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 10px #1e293b, 0 0 0 12px #334155;
+      overflow: hidden;
+      margin-bottom: 0;
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
+    }
+    .phone-simulator.is-desktop {
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+    .phone-simulator.is-desktop .phone-notch {
+      display: none;
+    }
+    .phone-simulator.is-desktop .phone-wechat-header {
+      height: 40px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 14px;
+      font-size: 13.5px;
+    }
+    .phone-notch {
+      height: 28px;
+      background: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .phone-speaker {
+      width: 60px;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 4px;
+    }
+    .phone-wechat-header {
+      height: 44px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: #1e293b;
+      font-size: 14.5px;
+      font-weight: 600;
+    }
+    .phone-content {
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+      max-height: none;
+      overflow-y: auto;
+      padding: 14px 16px 36px;
+      background: #ffffff;
+    }
+    .phone-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .phone-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #07c160;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ============================================================
+       Mobile Responsive System (<= 768px)
+       ============================================================ */
+    @media (max-width: 768px) {
+      body {
+        height: 100dvh;
+        min-height: -webkit-fill-available;
+        overflow: hidden;
+      }
+
+      /* 1. Header & Segmented Tabs */
+      .header-top {
+        height: 48px;
+        padding: 0 12px;
+        gap: 8px;
+      }
+      .brand-text-sub,
+      .read-stats,
+      .header-actions > *:not(.theme-mode-btn) {
+        display: none !important;
+      }
+      .mobile-segmented-tabs {
+        display: flex !important;
+        align-items: center;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 2px;
+        margin: 0 auto;
+      }
+      .mobile-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+      }
+      .mobile-tab-btn.active {
+        background: var(--card-bg);
+        color: var(--primary);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      /* 2. Main Pane Switching */
+      main {
+        position: relative;
+        height: calc(100dvh - 48px - 56px - env(safe-area-inset-bottom, 0px));
+        overflow: hidden;
+      }
+      main.is-tab-preview .editor-pane {
+        display: none !important;
+      }
+      main.is-tab-preview .preview-pane {
+        display: flex !important;
+      }
+      main.is-tab-edit .preview-pane {
+        display: none !important;
+      }
+      main.is-tab-edit .editor-pane {
+        display: flex !important;
+        width: 100% !important;
+        border-right: none !important;
+      }
+
+      /* 3. Immersive Phone Simulator */
+      .preview-pane {
+        min-width: 0 !important;
+        padding: 0 !important;
+        background: var(--bg) !important;
+        width: 100% !important;
+      }
+      .phone-simulator {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .phone-header,
+      .phone-footer-bar,
+      .phone-notch,
+      .device-select {
+        display: none !important;
+      }
+      .phone-screen {
+        padding: 14px 14px 72px 14px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* 4. Bottom Action Bar */
+      .bottom-action-bar {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(56px + env(safe-area-inset-bottom, 0px));
+        padding: 0 12px env(safe-area-inset-bottom, 0px);
+        background: var(--card-bg);
+        border-top: 1px solid var(--border);
+        backdrop-filter: blur(16px);
+        align-items: center;
+        justify-content: space-around;
+        z-index: 100;
+      }
+      .bottom-bar-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 8px;
+        min-width: 48px;
+        transition: all 0.15s ease;
+      }
+      .bottom-bar-btn.primary {
+        background: var(--primary);
+        color: #fff;
+        flex-direction: row;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .bottom-export-wrapper {
+        position: relative;
+      }
+      /* Mobile export menu pops upwards */
+      .bottom-export-wrapper .export-menu,
+      .bottom-export-wrapper .export-dropdown-menu {
+        top: auto !important;
+        bottom: calc(100% + 12px) !important;
+        right: -20px !important;
+      }
+
+      /* 5. Bottom Sheet Settings Drawer */
+      .settings-drawer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-height: 80dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border) !important;
+        box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.35) !important;
+        transform: translateY(100%);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        z-index: 200 !important;
+      }
+      .settings-drawer.open {
+        transform: translateY(0) !important;
+      }
+      .drawer-drag-handle {
+        display: block !important;
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border);
+        margin: 8px auto 0;
+      }
+      .drawer-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(3px);
+        z-index: 190;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .drawer-backdrop.active {
+        display: block;
+        opacity: 1;
+      }
+    }
+
+    /* Base hidden state for mobile-specific elements */
+    .mobile-segmented-tabs,
+    .bottom-action-bar,
+    .drawer-drag-handle,
+    .drawer-backdrop {
+      display: none;
+    }
+
+    /* Hide mobile-specific elements on desktop */
+    @media (min-width: 769px) {
+      .mobile-segmented-tabs,
+      .bottom-action-bar,
+      .drawer-drag-handle,
+      .drawer-backdrop {
+        display: none !important;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="./assets/index-BLvnkaiT.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <div class="brand">
+        <span>🌿 tan</span>
+        <span class="brand-badge">PRO EDITION</span>
+      </div>
+
+      <div class="mobile-segmented-tabs" id="mobile-tabs">
+        <button type="button" class="mobile-tab-btn" data-tab="edit" id="tab-btn-edit">
+          <span class="tab-icon">📝</span>
+          <span class="tab-label">编辑</span>
+        </button>
+        <button type="button" class="mobile-tab-btn active" data-tab="preview" id="tab-btn-preview">
+          <span class="tab-icon">👁️</span>
+          <span class="tab-label">预览</span>
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <select id="device-select" class="btn btn-secondary device-select" title="切换机型与阅读视口">
+        </select>
+
+        <button id="theme-mode-toggle" class="theme-mode-btn" title="切换深色/浅色模式">
+          <span id="theme-mode-icon">☀️</span>
+          <span id="theme-mode-text">浅色模式</span>
+        </button>
+
+        <button id="custom-css-btn" class="btn btn-secondary">
+          <span>🎨 自定义 CSS</span>
+        </button>
+
+        <button type="button" id="settings-card-btn" class="settings-nav-btn" title="点击展开/收起右侧排版与主题设置面板">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>设置</span>
+        </button>
+
+        <button id="copy-btn" class="btn btn-primary">
+          <span>📋 复制微信富文本</span>
+        </button>
+
+        <div class="export-dropdown-wrapper">
+          <button id="export-menu-btn" class="btn btn-secondary" title="导出为多种格式">
+            <span>📥 导出 ▾</span>
+          </button>
+          <div id="export-menu" class="export-menu" style="display: none;">
+            <button id="export-html-btn" class="export-item">
+              <span class="export-item-icon">📄</span>
+              <div class="export-item-info">
+                <div class="export-item-title">导出独立 HTML</div>
+                <div class="export-item-desc">含完整内联样式，开箱即用</div>
+              </div>
+            </button>
+            <button id="export-md-btn" class="export-item">
+              <span class="export-item-icon">📝</span>
+              <div class="export-item-info">
+                <div class="export-item-title">导出 Markdown</div>
+                <div class="export-item-desc">标准化排版源码与中英盘古空格</div>
+              </div>
+            </button>
+            <button id="export-pdf-btn" class="export-item">
+              <span class="export-item-icon">🖨️</span>
+              <div class="export-item-info">
+                <div class="export-item-title">打印 / 导出 PDF</div>
+                <div class="export-item-desc">高保真矢量打印与分页防断</div>
+              </div>
+            </button>
+            <button id="export-image-btn" class="export-item" title="把整篇文章导出为长图（朋友圈 / 小红书 / 视频号封面）">
+              <span class="export-item-icon">🖼️</span>
+              <div class="export-item-info">
+                <div class="export-item-title">导出手机长图</div>
+                <div class="export-item-desc">2x 视网膜高清 PNG</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="editor-pane">
+      <div class="pane-header">
+        <span>MARKDOWN 编辑器 (支持表格滑动、卡片组件与全量配置)</span>
+        <span class="pane-header-right">
+          <button
+            type="button"
+            id="scroll-sync-toggle"
+            class="scroll-sync-btn"
+            aria-pressed="true"
+            title="双向滚动同步：编辑区与预览互相对齐同一段内容"
+          >🔗 跟随滚动</button>
+          <span id="char-count">0 字</span>
+        </span>
+      </div>
+      <div id="unsupported-banner" class="unsupported-banner" style="display: none;">
+        <span class="unsupported-banner-icon">⚠️</span>
+        <span id="unsupported-banner-text"></span>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="在此处粘贴或输入 Markdown 内容..."></textarea>
+      <div id="css-container" class="custom-css-pane">
+        <div class="pane-header">
+          <span>自定义 CSS 覆盖</span>
+        </div>
+        <textarea id="custom-css" spellcheck="false" placeholder="例如: h1 { color: #8b5cf6 !important; }"></textarea>
+      </div>
+    </div>
+
+    <div class="preview-pane">
+      <div class="phone-simulator" id="phone-simulator">
+        <div class="phone-notch" id="phone-notch">
+          <div class="phone-speaker"></div>
+        </div>
+        <div class="phone-wechat-header" id="phone-wechat-header">
+          <span id="phone-nav-back">‹ 微信</span>
+          <span id="phone-nav-title" style="font-size: 14px; font-weight: 600;">文章预览</span>
+          <span id="phone-nav-more">···</span>
+        </div>
+        <div id="preview" class="phone-content"></div>
+      </div>
+    </div>
+
+    <!-- 右侧设置抽屉 (挤压并排模式，绝不遮挡预览) -->
+    <aside id="settings-drawer" class="settings-drawer">
+      <div class="drawer-drag-handle"></div>
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e80ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>设置</span>
+        </div>
+        <button type="button" id="drawer-close-btn" class="drawer-close-btn" title="收起面板">✕</button>
+      </div>
+
+      <div class="drawer-content">
+        <!-- 顶部当前选中主题卡片展示 (仿设计图视觉卡片) -->
+        <div class="current-theme-card">
+          <div class="current-theme-header">
+            <span class="current-theme-tag">当前主题</span>
+            <span class="theme-count-badge" id="theme-count-badge"></span>
+          </div>
+          <div class="current-theme-title" id="drawer-theme-title">科技蓝 · 现代极客</div>
+          <div class="current-theme-desc" id="drawer-theme-desc">专为深度技术、架构剖析与产品发布打造，冷色科技调与高对比代码排印</div>
+        </div>
+
+        <!-- 1. 主题网格 -->
+        <div class="popover-section">
+          <div class="popover-section-title">
+            <span>选择主题风格</span>
+            <span class="section-subtext" id="current-theme-name">科技蓝</span>
+          </div>
+          <div class="theme-grid" id="theme-grid"></div>
+        </div>
+
+        <!-- 2. 字体选择 -->
+        <div class="popover-section">
+          <div class="popover-section-title">正文字体</div>
+          <select id="font-family-select" class="popover-select">
+            <option value="theme-default" selected>跟随主题预设 (推荐)</option>
+            <option value="sans-serif">无衬线黑体 (苹方 / 微软雅黑)</option>
+            <option value="serif">衬线体 (思源宋体 / Serif)</option>
+            <option value="kaiti">人文楷体 (霞鹜文楷 / 楷体)</option>
+          </select>
+        </div>
+
+        <!-- 3. 字号分段控制器 -->
+        <div class="popover-section">
+          <div class="popover-section-title">正文字号</div>
+          <div class="segmented-control" id="font-size-group">
+            <button type="button" class="seg-btn" data-size="14px">小</button>
+            <button type="button" class="seg-btn" data-size="15px">较小</button>
+            <button type="button" class="seg-btn active" data-size="16px">推荐</button>
+            <button type="button" class="seg-btn" data-size="17px">较大</button>
+            <button type="button" class="seg-btn" data-size="18px">大</button>
+          </div>
+        </div>
+
+        <!-- 4. 主题色预设与自定义 -->
+        <div class="popover-section">
+          <div class="popover-section-title">
+            <span>主题强调色</span>
+            <span class="color-hex-label" id="current-color-hex">#1e80ff</span>
+          </div>
+          <div class="color-swatches-row" id="color-swatches">
+            <button type="button" class="color-swatch-circle active" style="background:#1e80ff;" data-color="#1e80ff" title="科技蓝"></button>
+            <button type="button" class="color-swatch-circle" style="background:#10b981;" data-color="#10b981" title="翡翠绿"></button>
+            <button type="button" class="color-swatch-circle" style="background:#8b5cf6;" data-color="#8b5cf6" title="极光紫"></button>
+            <button type="button" class="color-swatch-circle" style="background:#f97316;" data-color="#f97316" title="活力橙"></button>
+            <button type="button" class="color-swatch-circle" style="background:#06b6d4;" data-color="#06b6d4" title="清泉青"></button>
+            <button type="button" class="color-swatch-circle" style="background:#ec4899;" data-color="#ec4899" title="蔷薇粉"></button>
+            <button type="button" class="color-swatch-circle" style="background:#ef4444;" data-color="#ef4444" title="国风红"></button>
+            <button type="button" class="color-swatch-circle" style="background:#334155;" data-color="#334155" title="深岩灰"></button>
+            <label class="custom-color-btn" id="custom-color-label" title="点击呼出系统颜色拾取器">
+              自定义
+              <input type="color" id="primary-color-picker" value="#1e80ff" />
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. 页面两侧留白滑块 (对应设计图) -->
+        <div class="popover-section">
+          <div class="popover-section-title">
+            <span>页面两侧留白</span>
+            <span class="slider-badge" id="padding-val-badge">16px</span>
+          </div>
+          <input type="range" id="padding-slider" min="6" max="32" step="2" value="16" class="custom-range" />
+        </div>
+
+        <!-- 6. 卡片与模块阴影调节 (Shadow) -->
+        <div class="popover-section">
+          <div class="popover-section-title">
+            <span>卡片与组件阴影</span>
+            <span class="slider-badge" id="shadow-val-badge">适中 (8px)</span>
+          </div>
+          <input type="range" id="shadow-slider" min="0" max="24" step="2" value="8" class="custom-range" />
+        </div>
+
+        <!-- 7. 高级折叠面板 (代码高亮与排印微调) -->
+        <div class="popover-advanced">
+          <button type="button" id="advanced-toggle-btn" class="advanced-toggle-btn">
+            <span>⚙️ 代码高亮与排印微调</span>
+            <span id="advanced-arrow">▾</span>
+          </button>
+
+          <div id="advanced-body" class="advanced-body">
+            <div class="control-row">
+              <span>代码高亮:</span>
+              <select id="code-theme-select" class="popover-select-small"></select>
+            </div>
+
+            <div class="control-row">
+              <span>行间距:</span>
+              <select id="line-height-select" class="popover-select-small">
+                <option value="1.6">1.6 (紧凑)</option>
+                <option value="1.75">1.75 (适中)</option>
+                <option value="1.85" selected>1.85 (呼吸感)</option>
+                <option value="2.0">2.0 (宽松)</option>
+              </select>
+            </div>
+
+            <div class="control-row">
+              <span>字间距:</span>
+              <select id="letter-spacing-select" class="popover-select-small">
+                <option value="0px">0px</option>
+                <option value="0.5px" selected>0.5px</option>
+                <option value="1px">1px</option>
+                <option value="1.5px">1.5px</option>
+              </select>
+            </div>
+
+            <div class="toggles-grid">
+              <label class="toggle-label" title="开启段落两端自然对齐">
+                <input type="checkbox" id="justify-toggle" checked />
+                <span>两端对齐</span>
+              </label>
+              <label class="toggle-label" title="显示 Mac 风格三色圆点">
+                <input type="checkbox" id="mac-header-toggle" checked />
+                <span>Mac代码栏</span>
+              </label>
+              <label class="toggle-label" title="代码块显示行号">
+                <input type="checkbox" id="line-numbers-toggle" />
+                <span>代码行号</span>
+              </label>
+              <label class="toggle-label" title="自动插入中英文排印微空格">
+                <input type="checkbox" id="pangu-toggle" checked />
+                <span>盘古之白</span>
+              </label>
+              <label class="toggle-label" title="将双引号自动转换为中式「...」">
+                <input type="checkbox" id="corner-quotes-toggle" />
+                <span>直角引号「」</span>
+              </label>
+              <label class="toggle-label" title="微信不支持外链跳转，自动汇总为文末脚注">
+                <input type="checkbox" id="footnotes-toggle" checked />
+                <span>外链转脚注</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+  <!-- 微信公众号排版合规体检弹窗 -->
+  <div id="spec-modal" class="spec-modal-overlay">
+    <div class="spec-modal-card">
+      <div class="spec-modal-header">
+        <div class="spec-modal-title">
+          <span>🛡️</span>
+          <span>微信公众号排版合规体检</span>
+        </div>
+        <button type="button" id="spec-modal-close" class="spec-modal-close" title="关闭弹窗">✕</button>
+      </div>
+      <div class="spec-modal-body" id="spec-modal-body">
+        <div class="spec-score-box">
+          <div class="spec-score-info">
+            <span class="spec-score-label">排版安全与深色模式合规评分</span>
+            <span class="spec-score-summary" id="spec-passed-summary">5 / 5 项规则通过</span>
+          </div>
+          <div class="spec-score-badge score-perfect" id="spec-score-badge">100 分</div>
+        </div>
+
+        <!-- 智能排版自愈横幅 (评分小于 100 时显示) -->
+        <div id="spec-autofix-banner" class="spec-autofix-banner" style="display: none;">
+          <div class="spec-autofix-content">
+            <div class="spec-autofix-title">✨ 智能排版自愈系统</div>
+            <div class="spec-autofix-desc">检测到行距偏小或表格/样式存在排版隐患。无需懂代码，点击右侧即可一键自愈修复。</div>
+          </div>
+          <button type="button" id="spec-autofix-btn" class="spec-autofix-btn">✨ 一键合规自愈修复</button>
+        </div>
+
+        <div id="spec-issues-container" class="spec-issues-list"></div>
+
+        <div class="spec-modal-footer">
+          <button type="button" id="spec-modal-copy-btn" class="btn btn-primary spec-modal-copy-btn">📋 复制 100 分合规富文本</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <span>🎉</span>
+    <span id="toast-msg">微信排版已复制到剪贴板！</span>
+  </div>
+
+  <nav class="bottom-action-bar" id="bottom-action-bar">
+    <button type="button" class="bottom-bar-btn" id="mobile-theme-btn" title="排版主题">
+      <span class="bottom-btn-icon">🎨</span>
+      <span class="bottom-btn-text">主题</span>
+    </button>
+    <div class="bottom-export-wrapper">
+      <button type="button" class="bottom-bar-btn" id="mobile-export-btn" title="导出">
+        <span class="bottom-btn-icon">📥</span>
+        <span class="bottom-btn-text">导出</span>
+      </button>
+      <div id="mobile-export-menu" class="export-menu" style="display: none;">
+        <button id="mobile-export-html-btn" class="export-item">
+          <span class="export-item-icon">📄</span>
+          <div class="export-item-info">
+            <div class="export-item-title">导出独立 HTML</div>
+            <div class="export-item-desc">含完整内联样式，开箱即用</div>
+          </div>
+        </button>
+        <button id="mobile-export-md-btn" class="export-item">
+          <span class="export-item-icon">📝</span>
+          <div class="export-item-info">
+            <div class="export-item-title">导出 Markdown</div>
+            <div class="export-item-desc">标准化排版源码与中英盘古空格</div>
+          </div>
+        </button>
+        <button id="mobile-export-pdf-btn" class="export-item">
+          <span class="export-item-icon">🖨️</span>
+          <div class="export-item-info">
+            <div class="export-item-title">打印 / 导出 PDF</div>
+            <div class="export-item-desc">高保真矢量打印与分页防断</div>
+          </div>
+        </button>
+        <button id="mobile-export-image-btn" class="export-item">
+          <span class="export-item-icon">🖼️</span>
+          <div class="export-item-info">
+            <div class="export-item-title">导出手机长图</div>
+            <div class="export-item-desc">2x 视网膜高清 PNG</div>
+          </div>
+        </button>
+      </div>
+    </div>
+    <button type="button" class="bottom-bar-btn primary" id="mobile-copy-btn" title="复制到微信">
+      <span class="bottom-btn-icon">📋</span>
+      <span class="bottom-btn-text">复制到微信</span>
+    </button>
+  </nav>
+
+  <script>
+    window.addEventListener("error", function(e) {
+      var p = document.getElementById("preview");
+      if (p && !p.innerHTML.trim()) {
+        p.innerHTML = '<div style="color: #ef4444; padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-family: -apple-system, sans-serif;"><div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">⚠️ 脚本加载或运行时异常:</div><pre style="white-space: pre-wrap; font-size: 12px; font-family: monospace; color: #991b1b; margin: 0;">' + (e.message || e.error || e) + '</pre></div>';
+      }
+    });
+    window.addEventListener("unhandledrejection", function(e) {
+      var p = document.getElementById("preview");
+      if (p && !p.innerHTML.trim()) {
+        p.innerHTML = '<div style="color: #ef4444; padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; font-family: -apple-system, sans-serif;"><div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">⚠️ Promise 异常:</div><pre style="white-space: pre-wrap; font-size: 12px; font-family: monospace; color: #991b1b; margin: 0;">' + (e.reason && (e.reason.stack || e.reason.message) || e.reason) + '</pre></div>';
+      }
+    });
+  </script>
+</body>
+</html>
